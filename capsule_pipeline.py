@@ -14,13 +14,12 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 # === CONFIG ===
-DATA_DIR = "/content/drive/MyDrive/capsule/classification/temp2_augmented"
-IMG_SIZE = (224, 224)   # EfficientNetV2-B0 default input size
-BATCH_SIZE = 16
+DATA_DIR = "/content/drive/MyDrive/dataset/448dataset"
+IMG_SIZE = (448, 448)   # ✅ EfficientNetV2-S input size
+BATCH_SIZE = 32
 EPOCHS = 30
-MODEL_DIR = "/content/drive/MyDrive/capsule/224x224/capsule_model"  # Define model directory
-MODEL_NAME = "capsnap_efficientnetv2b0_no-negative"  # Define model name
-
+MODEL_DIR = "/content/drive/MyDrive/capsule/448x448/capsule_model"  # ✅ updated path
+MODEL_NAME = "capsnap_efficientnetv2s_2_negative"
 
 # === LOAD DATASETS ===
 train_ds = image_dataset_from_directory(
@@ -43,7 +42,7 @@ train_ds = train_ds.prefetch(buffer_size=AUTOTUNE)
 val_ds = val_ds.prefetch(buffer_size=AUTOTUNE)
 
 # === BASE MODEL ===
-base_model = EfficientNetV2B0(
+base_model = EfficientNetV2S(
     weights="imagenet",
     include_top=False,
     input_shape=IMG_SIZE + (3,)
@@ -59,8 +58,8 @@ model = models.Sequential([
     layers.RandomRotation(0.15),
     layers.RandomZoom(0.15),
 
-    # ✅ wrap preprocess_input in Lambda
-    layers.Lambda(tf.keras.applications.efficientnet_v2.preprocess_input),
+    # ✅ Preprocessing
+    layers.Lambda(preprocess_input),
 
     base_model,
     layers.GlobalAveragePooling2D(),
@@ -89,6 +88,9 @@ class_weights = class_weight.compute_class_weight(
     y=labels
 )
 class_weights = dict(enumerate(class_weights))
+
+
+# === CALLBACKS ===
 
 early_stopping = callbacks.EarlyStopping(
     monitor="val_loss",
